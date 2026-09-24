@@ -43,7 +43,10 @@ class LogSettings:
     file_path: Path = Path("logs/app.log")
     max_bytes: int = 10 * 1024 * 1024
     backup_count: int = 5
-    fmt: str = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+    fmt: str = (
+        "%(asctime)s | %(levelname)s | %(trace_id)s | %(name)s | %(message)s"
+    )
+    ensure_fields: tuple[str, ...] = ("trace_id",)
 
 
 def load_log_settings(
@@ -81,8 +84,15 @@ def load_log_settings(
         raise ConfigError(message="LOG_MAX_BYTES must be > 0 when LOG_TO_FILE=true")
 
     fmt = values.get("LOG_FORMAT") or (
-        "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+        "%(asctime)s | %(levelname)s | %(trace_id)s | %(name)s | %(message)s"
     )
+
+    ensure_raw = values.get("LOG_ENSURE_FIELDS") or "trace_id"
+    ensure_fields = tuple(
+        part.strip() for part in ensure_raw.split(",") if part.strip()
+    )
+    if not ensure_fields:
+        raise ConfigError(message="LOG_ENSURE_FIELDS must list at least one field")
 
     return LogSettings(
         level=level,
@@ -94,4 +104,5 @@ def load_log_settings(
         max_bytes=max_bytes if max_bytes > 0 else 10 * 1024 * 1024,
         backup_count=backup_count,
         fmt=fmt.strip(),
+        ensure_fields=ensure_fields,
     )

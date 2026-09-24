@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import json
-import logging
 from collections.abc import Iterator
 from typing import Any
 
+from common.logger import get_logger
 from llm.errors import ErrorType, LLMError
 from llm.types import FinishReason, Usage
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def join_url(base_url: str, path: str) -> str:
@@ -116,8 +116,19 @@ def raise_from_http_body(status_code: int, body: str, *, protocol: str) -> None:
                 str(payload["type"]) if payload.get("type") is not None else None
             )
 
-    # Avoid logging secrets; body may still be logged at debug without keys expectation
-    logger.debug("Upstream %s error status=%s body=%s", protocol, status_code, body[:500])
+    # Prefer message/code at ERROR (visible at default INFO+); raw body only at DEBUG.
+    logger.error(
+        "Upstream %s error status=%s code=%s message=%s",
+        protocol,
+        status_code,
+        provider_code,
+        message,
+    )
+    logger.debug(
+        "Upstream %s error body=%s",
+        protocol,
+        body[:500],
+    )
 
     raise LLMError(
         type=classify_http_error(status_code, provider_code),

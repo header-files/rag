@@ -59,6 +59,20 @@ def test_unknown_model_id() -> None:
         get_model("bar", environ=env)
 
 
+def test_load_models_logs_summary(caplog) -> None:
+    env = {
+        "DEFAULT_MODEL": "chatgpt",
+        "MODEL_CHATGPT_NAME": "gpt-4o-mini",
+        "MODEL_CHATGPT_BASE_URL": "https://api.openai.com/v1",
+        "MODEL_CHATGPT_API_KEY": "sk-test",
+    }
+    with caplog.at_level("INFO"):
+        load_models(environ=env)
+    assert "Loaded model configs" in caplog.text
+    assert "chatgpt" in caplog.text
+    assert "sk-test" not in caplog.text
+
+
 def test_load_from_env_file(tmp_path: Path) -> None:
     path = tmp_path / ".env"
     path.write_text(

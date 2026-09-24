@@ -36,16 +36,19 @@ def test_parse_usage() -> None:
     assert u2.total_tokens == 9
 
 
-def test_raise_from_http_body_openai_style() -> None:
+def test_raise_from_http_body_openai_style(caplog) -> None:
     body = '{"error":{"message":"bad key","type":"invalid_request_error","code":"invalid_api_key"}}'
-    with pytest.raises(LLMError) as exc:
-        raise_from_http_body(401, body, protocol="openai-completions")
+    with caplog.at_level("ERROR"):
+        with pytest.raises(LLMError) as exc:
+            raise_from_http_body(401, body, protocol="openai-completions")
     err = exc.value
     assert err.type == "auth_error"
     assert err.message == "bad key"
     assert err.status_code == 401
     assert err.provider_code == "invalid_api_key"
     assert err.retryable is False
+    assert "bad key" in caplog.text
+    assert "openai-completions" in caplog.text
 
 
 def test_raise_from_http_body_retryable_429() -> None:

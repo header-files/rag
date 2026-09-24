@@ -9,6 +9,9 @@ from typing import Literal
 
 from common.config.env import load_env
 from common.config.errors import ConfigError
+from common.logger import get_logger
+
+log = get_logger(__name__)
 
 ProtocolId = Literal["openai-completions", "openai-responses", "anthropic-messages"]
 
@@ -141,6 +144,12 @@ def load_models(
     if default_id not in models:
         raise ConfigError(message=f"DEFAULT_MODEL '{default_id}' is not defined")
 
+    log.info(
+        "Loaded model configs default=%s count=%d ids=%s",
+        default_id,
+        len(models),
+        ",".join(sorted(models)),
+    )
     return default_id, models
 
 
@@ -155,4 +164,12 @@ def get_model(
     if target not in models:
         known = ", ".join(sorted(models))
         raise ConfigError(message=f"Unknown model '{target}'. Known: {known}")
-    return models[target]
+    cfg = models[target]
+    log.info(
+        "Selected model id=%s protocol=%s name=%s base_url=%s",
+        cfg.id,
+        cfg.protocol,
+        cfg.name,
+        cfg.base_url,
+    )
+    return cfg

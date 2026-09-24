@@ -9,7 +9,7 @@
 | `common.config.env` | 通用 `.env` 加载（`load_env`） |
 | `common.config.errors` | `ConfigError` |
 | `common.config.models` | 模型连接配置（`ModelConfig` / `load_models` / `get_model`） |
-| `common.config.log_settings` | 日志开关与轮转参数（`LogSettings` / `load_log_settings`） |
+| `common.config.log_settings` | 日志开关、格式、轮转与 `LOG_ENSURE_FIELDS`（`LogSettings` / `load_log_settings`） |
 
 新增配置域时，在本包增加模块即可；通用文件读取复用 `load_env`。
 

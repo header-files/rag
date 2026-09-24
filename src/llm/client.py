@@ -6,9 +6,12 @@ from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 
 from common.config.models import ModelConfig, get_model, load_models
+from common.logger import get_logger
 from llm.protocols.registry import create_adapter
 from llm.transport.http import HttpTransport
 from llm.types import ChatRequest, ChatResponse, StreamChunk
+
+log = get_logger(__name__)
 
 
 class LLMClient:
@@ -40,14 +43,125 @@ class LLMClient:
         return load_models(env_path)
 
     def chat(self, request: ChatRequest) -> ChatResponse:
-        return self._adapter.chat(request)
+        log.info(
+            "chat start model_id=%s protocol=%s name=%s messages=%d",
+            self.config.id,
+            self.config.protocol,
+            self.config.name,
+            len(request.messages),
+        )
+        try:
+            response = self._adapter.chat(request)
+        except Exception as exc:
+            log.error(
+                "chat failed model_id=%s protocol=%s error=%s",
+                self.config.id,
+                self.config.protocol,
+                exc,
+            )
+            raise
+        log.info(
+            "chat done model_id=%s finish_reason=%s has_reasoning=%s",
+            self.config.id,
+            response.finish_reason,
+            bool(response.reasoning),
+        )
+        return response
 
     def chat_stream(self, request: ChatRequest) -> Iterator[StreamChunk]:
-        return self._adapter.chat_stream(request)
+        log.info(
+            "chat_stream start model_id=%s protocol=%s name=%s messages=%d",
+            self.config.id,
+            self.config.protocol,
+            self.config.name,
+            len(request.messages),
+        )
+        finish_reason = None
+        finished = False
+        try:
+            for chunk in self._adapter.chat_stream(request):
+                if chunk.type == "finish":
+                    finished = True
+                    finish_reason = chunk.finish_reason
+                yield chunk
+        except Exception as exc:
+            log.error(
+                "chat_stream failed model_id=%s protocol=%s error=%s",
+                self.config.id,
+                self.config.protocol,
+                exc,
+            )
+            raise
+        if finished:
+            log.info(
+                "chat_stream done model_id=%s finish_reason=%s",
+                self.config.id,
+                finish_reason,
+            )
+        else:
+            log.warning(
+                "chat_stream ended without finish model_id=%s",
+                self.config.id,
+            )
 
     async def achat(self, request: ChatRequest) -> ChatResponse:
-        return await self._adapter.achat(request)
+        log.info(
+            "achat start model_id=%s protocol=%s name=%s messages=%d",
+            self.config.id,
+            self.config.protocol,
+            self.config.name,
+            len(request.messages),
+        )
+        try:
+            response = await self._adapter.achat(request)
+        except Exception as exc:
+            log.error(
+                "achat failed model_id=%s protocol=%s error=%s",
+                self.config.id,
+                self.config.protocol,
+                exc,
+            )
+            raise
+        log.info(
+            "achat done model_id=%s finish_reason=%s has_reasoning=%s",
+            self.config.id,
+            response.finish_reason,
+            bool(response.reasoning),
+        )
+        return response
 
     async def achat_stream(self, request: ChatRequest) -> AsyncIterator[StreamChunk]:
-        async for chunk in self._adapter.achat_stream(request):
-            yield chunk
+        log.info(
+            "achat_stream start model_id=%s protocol=%s name=%s messages=%d",
+            self.config.id,
+            self.config.protocol,
+            self.config.name,
+            len(request.messages),
+        )
+        finish_reason = None
+        finished = False
+        try:
+            async for chunk in self._adapter.achat_stream(request):
+                if chunk.type == "finish":
+                    finished = True
+                    finish_reason = chunk.finish_reason
+                yield chunk
+        except Exception as exc:
+            log.error(
+                "achat_stream failed model_id=%s protocol=%s error=%s",
+                self.config.id,
+                self.config.protocol,
+                exc,
+            )
+            raise
+        if finished:
+            log.info(
+                "achat_stream done model_id=%s finish_reason=%s",
+                self.config.id,
+                finish_reason,
+            )
+        else:
+            log.warning(
+                "achat_stream ended without finish model_id=%s",
+                self.config.id,
+            )

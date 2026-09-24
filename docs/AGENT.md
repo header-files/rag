@@ -45,7 +45,7 @@ tests/
 ## 扩展指引
 
 - 公共配置：在 `src/common/config/` 增加模块；通用读 env 用 `common.config.env.load_env`
-- 日志：调整 `src/common/logger/` 或 `common/config/log_settings.py`
+- 日志：调整 `src/common/logger/`（含 `context.py` 扩展字段）或 `common/config/log_settings.py`
 - 新的公共能力：在 `src/common/` 下新增子包，并在 `docs/common/` 补文档
 - 新的大模型协议：在 `src/llm/protocols/` 新增 Adapter，注册到 `registry.py`，补测试与 `docs/llm/PROTOCOLS.md`
 
