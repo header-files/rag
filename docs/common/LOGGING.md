@@ -69,5 +69,10 @@ with log_context(trace_id="manual-id", user_id="42"):
 | `llm.protocols.common` | ERROR | 上游 HTTP 错误摘要；DEBUG 保留 body 截断 |
 | `llm.transport.http` | DEBUG | 请求 method/url/status |
 | `llm.cli` | INFO/ERROR | 会话启动、切模型、用户可见错误 |
+| `common.config.endpoints` / `rag` / `api` | INFO | 加载摘要（不含密钥） |
+| `rag.ingest` / `retrieve` / `query` / `rewrite` | INFO/ERROR | 入库、改写、检索、生成起止与失败 |
+| `rag.vectorstore.faiss_store` | INFO | add / soft-delete / rebuild |
+| `api.middleware` / `rag.api` | INFO/ERROR | 请求路径状态码、业务错误 |
+| `rag.cli` | INFO/ERROR | 客户端请求摘要 |
 
 上下文字段（如 `trace_id`）由入口 `traced()` / `bind()` 注入，上述日志自动带上。
