@@ -1,64 +1,68 @@
 # Agent 指南
 
-换机器或新会话时，先读本文件，再按需深入 `docs/common/` 与 `docs/llm/`。
+换机器或新会话时，先读本文件，再按需深入 `docs/common/`、`docs/llm/` 与 `docs/rag/`。
 
 ## 项目是什么
 
-Python + uv 项目：公共基建（配置、日志）+ 多协议 LLM HTTP 客户端（httpx，无官方 SDK）与 CLI 多轮对话。
+Python + uv：公共基建（配置、日志）+ 多协议 LLM 客户端 + 文档 RAG（FAISS、Embedding、Rerank、多轮会话）+ 公共 HTTP 层（`src/api`）与 CLI。
 
 ## 技术栈
 
-- Python >= 3.11，包管理 uv
-- httpx、python-dotenv、typer
-- 标准库 logging + RotatingFileHandler
-- 测试：pytest、pytest-asyncio、respx
+- Python >= 3.11，uv
+- httpx、FastAPI、uvicorn、typer、faiss-cpu、numpy、python-docx、pypdf
+- 测试：pytest、respx
+
+## 协议一览（本期）
+
+| 能力 | PROTOCOL |
+|------|----------|
+| 对话 | `openai-completions`（缺省）、`openai-responses`、`anthropic-messages` |
+| Embedding | `openai-embeddings`（缺省，唯一） |
+| Rerank | `cohere-rerank`（缺省）、`dashscope-text-rerank`（阿里云百炼） |
+
+细节见 `docs/common/CONFIG.md`。
 
 ## 目录地图
 
 ```text
-src/common/               # 公共基建
-  config/                 # .env 加载、各域配置（含模型、日志等）
-  logger/                 # 控制台 + 按大小轮转文件
-src/llm/                  # 大模型调用域
-  types.py / errors.py / client.py / session.py
-  transport/http.py
-  protocols/
-  cli/main.py             # llm-chat 入口
-docs/common/              # 公共基建文档
-docs/llm/                 # 大模型调用域文档
-docs/AGENT.md
+src/common/     config / logger
+src/api/        公共 HTTP：工厂、trace、统一错误、挂载路由
+src/llm/        对话客户端与 llm-chat
+src/rag/        解析、切分、embedding、rerank、rewrite、FAISS、retrieve、context、session、query、cli
+docs/
 tests/
 .env.example
 ```
 
-## 必读文档顺序
+## 必读顺序
 
-1. `docs/common/CONFIG.md` — 配置约定
-2. `docs/common/LOGGING.md` — 日志约定
-3. `docs/llm/REQUIREMENTS.md` — 大模型域需求与边界
-4. `docs/llm/ARCHITECTURE.md` — 分层与扩展点
-5. `docs/llm/UNIFIED_API.md` — 客户端交互协议
-6. `docs/llm/ERRORS.md` — 调用错误归一
-7. 改协议时：`docs/llm/PROTOCOLS.md`
-8. 改 CLI/Session：`docs/llm/SESSION.md`、`docs/llm/CLI.md`
+1. `docs/common/CONFIG.md`
+2. `docs/common/LOGGING.md`
+3. `docs/rag/REQUIREMENTS.md`
+4. `docs/rag/ARCHITECTURE.md`
+5. `docs/rag/API.md` / `docs/rag/CLI.md`
+6. 改对话协议时读 `docs/llm/`
 
-## 扩展指引
+## 扩展
 
-- 公共配置：在 `src/common/config/` 增加模块；通用读 env 用 `common.config.env.load_env`
-- 日志：调整 `src/common/logger/`（含 `context.py` 扩展字段）或 `common/config/log_settings.py`
-- 新的公共能力：在 `src/common/` 下新增子包，并在 `docs/common/` 补文档
-- 新的大模型协议：在 `src/llm/protocols/` 新增 Adapter，注册到 `registry.py`，补测试与 `docs/llm/PROTOCOLS.md`
+- 新配置域：`src/common/config/`
+- 新 HTTP 业务：域内 router + `src/api` `include_router`
+- 新 embedding/rerank 协议：Adapter + registry
+- 新向量后端：实现 `VectorStore` 并注册（本期仅 faiss）
+- 新文件类型：parser registry
 
 ## 常用命令
 
 ```bash
 uv sync
 uv run pytest
-uv run llm-chat --list-models
+uv run rag serve
+uv run rag upload ./notes.md
+uv run rag chat
 ```
 
 ## Git
 
-- 远程：`git@github.com:header-files/llm.git`
+- 远程：`git@github.com:header-files/rag.git`
 - 主分支：`main`
-- Commit 使用 Conventional Commits（`feat` / `fix` / `docs` / `test` 等）
+- Conventional Commits

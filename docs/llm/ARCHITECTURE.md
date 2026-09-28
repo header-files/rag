@@ -5,9 +5,9 @@
 ```text
 src/
   common/     # 公共基建：config、logger
-    config/
-    logger/
+  api/        # 公共 HTTP 层
   llm/        # 大模型调用
+  rag/        # 文档 RAG
 ```
 
 ## 大模型调用分层
